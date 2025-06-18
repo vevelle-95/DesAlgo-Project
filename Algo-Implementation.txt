@@ -1,0 +1,14 @@
+procedure TSP_Backtracking(current_city, visited[], path, current_cost):
+    if all cities are visited:
+        if current_cost + distance[current_city][start_city] < best_cost:
+            best_cost ← current_cost + distance[current_city][start_city]
+            best_path ← path + [start_city]
+        return
+
+    for next_city from 0 to N-1:
+        if not visited[next_city] and distance[current_city][next_city] ≠ 0:
+            next_cost ← current_cost + distance[current_city][next_city]
+            if next_cost < best_cost:  // pruning condition
+                visited[next_city] ← true
+                TSP_Backtracking(next_city, visited, path + [next_city], next_cost)
+                visited[next_city] ← false  // backtrack
