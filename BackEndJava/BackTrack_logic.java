@@ -12,7 +12,7 @@ public class PathfindingApp {
 
     private final Graph graph;
     private final BackTrackAlgo solver;
-    private final String mode = "car";
+    private final String mode = "mixcommute";
 
     public PathfindingApp() {
         List<String> files = List.of("C:/Users/johnr/Downloads/big_map.csv"); // Update path as needed
@@ -30,7 +30,8 @@ public class PathfindingApp {
         solver.findShortestPath(start, end);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("event", Optional.ofNullable(graph.getLastEvent()).map(SimulationEvent::getMessage).orElse("None"));
+        response.put("event",
+                Optional.ofNullable(graph.getLastEvent()).map(SimulationEvent::getMessage).orElse("None"));
         response.put("path", solver.getBestPath());
         response.put("distance", solver.getBestDistance());
 
@@ -52,23 +53,31 @@ public class PathfindingApp {
 
     static class EdgeWeight {
         private int walk;
-        private int car;
+        private int mixcommute;
         private Integer jeepney;
 
-        public EdgeWeight(int walk, int car, Integer jeepney) {
+        public EdgeWeight(int walk, int mixcommute, Integer jeepney) {
             this.walk = walk;
-            this.car = car;
+            this.mixcommute = mixcommute;
             this.jeepney = jeepney;
         }
 
-        public int getWalk() { return walk; }
-        public int getCar() { return car; }
-        public Integer getJeepney() { return jeepney; }
+        public int getWalk() {
+            return walk;
+        }
+
+        public int getmixcommute() {
+            return mixcommute;
+        }
+
+        public Integer getJeepney() {
+            return jeepney;
+        }
 
         public int getMode(String mode) {
             return switch (mode) {
                 case "walk" -> walk;
-                case "car" -> car;
+                case "mixcommute" -> mixcommute;
                 case "jeep" -> (jeepney != null ? jeepney : Integer.MAX_VALUE);
                 default -> throw new IllegalArgumentException("Invalid mode: " + mode);
             };
@@ -85,7 +94,9 @@ public class PathfindingApp {
             this.message = message;
         }
 
-        public String getMessage() { return message; }
+        public String getMessage() {
+            return message;
+        }
     }
 
     static class Graph {
@@ -93,7 +104,8 @@ public class PathfindingApp {
         private SimulationEvent lastEvent;
 
         public Graph(List<String> filenames) {
-            for (String filename : filenames) loadFromCSV(filename);
+            for (String filename : filenames)
+                loadFromCSV(filename);
         }
 
         public void addEdge(String from, String to, EdgeWeight weight) {
@@ -101,17 +113,24 @@ public class PathfindingApp {
             adjList.computeIfAbsent(to, k -> new HashMap<>()).put(from, weight);
         }
 
-        public Map<String, Map<String, EdgeWeight>> getAdjList() { return adjList; }
-        public SimulationEvent getLastEvent() { return lastEvent; }
+        public Map<String, Map<String, EdgeWeight>> getAdjList() {
+            return adjList;
+        }
+
+        public SimulationEvent getLastEvent() {
+            return lastEvent;
+        }
 
         public void simulateRandomEvent(String mode) {
             List<String> nodes = new ArrayList<>(adjList.keySet());
-            if (nodes.size() < 2) return;
+            if (nodes.size() < 2)
+                return;
 
             Random rand = new Random();
             String from = nodes.get(rand.nextInt(nodes.size()));
             List<String> neighbors = new ArrayList<>(adjList.get(from).keySet());
-            if (neighbors.isEmpty()) return;
+            if (neighbors.isEmpty())
+                return;
             String to = neighbors.get(rand.nextInt(neighbors.size()));
 
             int eventType = rand.nextInt(5);
@@ -139,19 +158,20 @@ public class PathfindingApp {
             int newWeight = oldWeight + added;
 
             int walk = ew.getWalk();
-            int car = ew.getCar();
+            int mixcommute = ew.getmixcommute();
             Integer jeep = ew.getJeepney();
 
             switch (mode) {
                 case "walk" -> walk = newWeight;
-                case "car" -> car = newWeight;
+                case "mixcommute" -> mixcommute = newWeight;
                 case "jeep" -> jeep = newWeight;
             }
 
-            EdgeWeight updated = new EdgeWeight(walk, car, jeep);
+            EdgeWeight updated = new EdgeWeight(walk, mixcommute, jeep);
             adjList.get(from).put(to, updated);
             adjList.get(to).put(from, updated);
-            lastEvent = new SimulationEvent("traffic", from, to, reason + ": " + from + " ↔ " + to + " now " + newWeight + " mins");
+            lastEvent = new SimulationEvent("traffic", from, to,
+                    reason + ": " + from + " ↔ " + to + " now " + newWeight + " mins");
         }
 
         private void loadFromCSV(String filename) {
@@ -163,9 +183,9 @@ public class PathfindingApp {
                         String from = parts[0].trim();
                         String to = parts[1].trim();
                         int walk = Integer.parseInt(parts[2].trim());
-                        int car = Integer.parseInt(parts[3].trim());
+                        int mixcommute = Integer.parseInt(parts[3].trim());
                         Integer jeep = (parts.length > 4) ? Integer.parseInt(parts[4].trim()) : null;
-                        addEdge(from, to, new EdgeWeight(walk, car, jeep));
+                        addEdge(from, to, new EdgeWeight(walk, mixcommute, jeep));
                     }
                 }
             } catch (IOException e) {
@@ -180,7 +200,9 @@ public class PathfindingApp {
         private List<String> bestPath;
         private List<Step> bestSteps;
 
-        public BackTrackAlgo(Graph graph) { this.graph = graph; }
+        public BackTrackAlgo(Graph graph) {
+            this.graph = graph;
+        }
 
         public void findShortestPath(String startNode, String endNode) {
             Set<String> visited = new HashSet<>();
@@ -196,7 +218,8 @@ public class PathfindingApp {
             backtrack(path, visited, 0, steps, endNode);
         }
 
-        private void backtrack(List<String> path, Set<String> visited, int currentDistance, List<Step> steps, String endNode) {
+        private void backtrack(List<String> path, Set<String> visited, int currentDistance, List<Step> steps,
+                String endNode) {
             String current = path.get(path.size() - 1);
             if (current.equals(endNode)) {
                 if (currentDistance < bestDistance) {
@@ -227,16 +250,24 @@ public class PathfindingApp {
         }
 
         private String getBestMode(EdgeWeight ew) {
-            int walk = ew.getWalk(), car = ew.getCar();
+            int walk = ew.getWalk(), mixcommute = ew.getmixcommute();
             int jeep = (ew.getJeepney() != null) ? ew.getJeepney() : Integer.MAX_VALUE;
 
-            int min = Math.min(walk, Math.min(car, jeep));
-            return (min == walk) ? "walk" : (min == car) ? "car" : "jeep";
+            int min = Math.min(walk, Math.min(mixcommute, jeep));
+            return (min == walk) ? "walk" : (min == mixcommute) ? "mixcommute" : "jeep";
         }
 
-        public List<String> getBestPath() { return bestPath; }
-        public int getBestDistance() { return bestDistance; }
-        public List<Step> getBestSteps() { return bestSteps; }
+        public List<String> getBestPath() {
+            return bestPath;
+        }
+
+        public int getBestDistance() {
+            return bestDistance;
+        }
+
+        public List<Step> getBestSteps() {
+            return bestSteps;
+        }
     }
 
     static class Step {
@@ -250,10 +281,20 @@ public class PathfindingApp {
             this.weightUsed = weightUsed;
         }
 
-        public String getFrom() { return from; }
-        public String getTo() { return to; }
-        public String getModeUsed() { return modeUsed; }
-        public int getWeightUsed() { return weightUsed; }
+        public String getFrom() {
+            return from;
+        }
+
+        public String getTo() {
+            return to;
+        }
+
+        public String getModeUsed() {
+            return modeUsed;
+        }
+
+        public int getWeightUsed() {
+            return weightUsed;
+        }
     }
 }
-
